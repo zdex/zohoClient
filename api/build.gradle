@@ -1,0 +1,46 @@
+plugins {
+    id 'java'
+    id 'war'
+    id 'org.springframework.boot' version '4.0.0'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.zoho'
+version = '0.0.1-SNAPSHOT'
+description = 'Zoho Client project'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    // Core Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+
+    // ✔ New Spring Boot 4 HTTP client (RestClient)
+    implementation 'org.springframework.boot:spring-boot-starter-restclient'
+
+    // Tomcat runtime for WAR packaging
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat-runtime'
+
+    // Testing dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-rest-test'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

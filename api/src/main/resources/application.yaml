@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: client
+Access-Control-Allow-Credentials: true
+zoho:
+    client-id: 1000.S9CMBC2Y5AO0CASPPMP8ADWKCYP8HM
+    client-secret: 101c7a1f5aa5e5295d5b850bd7cd168a68849e18ab
+    redirect-uri: "http://localhost:4200/zoho/callback"
+    auth-url: "https://accounts.zoho.com/oauth/v2/auth"
+    token-url: "https://accounts.zoho.com/oauth/v2/token"
+    scope: "ZohoBooks.invoices.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.UPDATE,ZohoBooks.invoices.DELETE"
