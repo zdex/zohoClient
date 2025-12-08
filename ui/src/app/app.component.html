@@ -1,16 +1,15 @@
-<div style="text-align:center; margin-top:40px;">
-  <h2>Zoho OAuth Demo</h2>
+<app-header></app-header>
 
-  <button (click)="connectToZoho()" style="padding:10px 20px; margin-bottom:20px;">
-    Connect with Zoho
-  </button>
+<div class="layout">
+  <app-sidebar></app-sidebar>
 
-  <div *ngIf="token">
-    <h3>Current Token</h3>
-    <pre>{{ token | json }}</pre>
-  </div>
+  <main class="content-area">
+    <div class="page-actions">
+      <button (click)="connectToZoho()" class="primary-btn">
+        Connect with Zoho
+      </button>
+    </div>
 
-  <div *ngIf="!token">
-    <p>No token stored yet.</p>
-  </div>
+    <router-outlet></router-outlet>
+  </main>
 </div>

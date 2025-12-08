@@ -11,7 +11,7 @@ description = 'Zoho Client project'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -28,7 +28,7 @@ dependencies {
 
     // ✔ New Spring Boot 4 HTTP client (RestClient)
     implementation 'org.springframework.boot:spring-boot-starter-restclient'
-
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     // Tomcat runtime for WAR packaging
     providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat-runtime'
 
@@ -39,6 +39,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-data-rest-test'
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
 }
 
 tasks.named('test') {

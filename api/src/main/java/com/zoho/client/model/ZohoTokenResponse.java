@@ -38,8 +38,9 @@ public class ZohoTokenResponse {
     @JsonIgnore
     public boolean isExpired() {
         long now = System.currentTimeMillis();
-        // add a small buffer (10 seconds) to be safe
-        return now >= fetchedAt + (expires_in * 1000L) - 10_000L;
+        long lifetimeMs = expires_in * 1000L;
+        // small safety buffer of 10 seconds
+        return now >= fetchedAt + lifetimeMs - 10_000L;
     }
 
     @Override

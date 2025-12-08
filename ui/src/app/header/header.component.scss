@@ -1,0 +1,49 @@
+.app-header {
+  height: 60px;
+  background: #ffffff;
+  border-bottom: 1px solid #e3e3e3;
+  padding: 0 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .left {
+    display: flex;
+    align-items: center;
+
+    .logo {
+      width: 38px;
+      margin-right: 10px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+
+  .right {
+    display: flex;
+    align-items: center;
+
+    .refresh-btn {
+      background: #0078ff;
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 4px;
+      margin-right: 16px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid #ccc;
+    }
+  }
+}

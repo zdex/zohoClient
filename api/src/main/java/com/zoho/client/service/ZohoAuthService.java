@@ -15,14 +15,14 @@ public class ZohoAuthService {
 
     private final RestClient restClient;
     private final ZohoProperties properties;
-    private final TokenStorage storage;
+    private final TokenStore tokenStore;
 
     public ZohoAuthService(RestClient.Builder builder,
                            ZohoProperties properties,
-                           TokenStorage storage) {
+                           TokenStore store) {
         this.restClient = builder.build();
         this.properties = properties;
-        this.storage = storage;
+        this.tokenStore = store;
     }
 
     // 1) Build authorization URL for Angular to redirect browser
@@ -54,13 +54,13 @@ public class ZohoAuthService {
                 .retrieve()
                 .body(ZohoTokenResponse.class);
 
-        storage.saveToken(token);
+        tokenStore.saveToken(token);
         return token;
     }
 
     // 3) Refresh using refresh_token
     public ZohoTokenResponse refreshToken() {
-        ZohoTokenResponse current = storage.getToken();
+        ZohoTokenResponse current = tokenStore.getToken();
         if (current == null || current.getRefresh_token() == null) {
             throw new IllegalStateException("No refresh token available");
         }
@@ -79,7 +79,7 @@ public class ZohoAuthService {
                     .retrieve()
                     .body(ZohoTokenResponse.class);
 
-            storage.saveToken(token);
+            tokenStore.saveToken(token);
             return token;
         } catch (HttpClientErrorException e) {
             System.err.println("❌ Refresh failed: " + e.getResponseBodyAsString());
@@ -89,14 +89,14 @@ public class ZohoAuthService {
 
     // 4) Get valid token (refresh if needed)
     public ZohoTokenResponse getValidToken() {
-        if (storage.hasValidToken()) {
-            return storage.getToken();
+        if (tokenStore.hasValidToken()) {
+            return tokenStore.getToken();
         }
         return refreshToken();
     }
 
     // For Angular to display token info safely
     public ZohoTokenResponse getCurrentTokenSnapshot() {
-        return storage.getToken();
+        return tokenStore.getToken();
     }
 }

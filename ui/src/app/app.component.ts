@@ -1,12 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { ZohoAuthService, ZohoTokenResponse } from './zoho-auth.service';
  import { JsonPipe, CommonModule, NgIf } from '@angular/common';
-
+import { RouterLink, RouterOutlet } from '@angular/router';
+import { HeaderComponent } from './header/header.component';
+import { SidebarComponent } from './sidebar/sidebar.component';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   standalone: true,
-  imports: [JsonPipe, NgIf, CommonModule],
+  styleUrls: ['./app.component.scss'],
+  imports: [JsonPipe, NgIf, CommonModule, RouterOutlet, RouterLink,  HeaderComponent,
+    SidebarComponent],
 })
 export class AppComponent implements OnInit {
 

@@ -1,6 +1,10 @@
 spring:
   application:
     name: client
+  data:
+    redis:
+      host: localhost
+      port: 6379
 Access-Control-Allow-Credentials: true
 zoho:
     client-id: 1000.S9CMBC2Y5AO0CASPPMP8ADWKCYP8HM
