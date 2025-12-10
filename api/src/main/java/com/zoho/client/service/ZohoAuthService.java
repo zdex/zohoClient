@@ -15,14 +15,20 @@ public class ZohoAuthService {
 
     private final RestClient restClient;
     private final ZohoProperties properties;
-    private final TokenStore tokenStore;
+   // private final TokenStore tokenStore;
+   private final TokenStorage tokenStore;
+    private final ZohoOrganizationService orgService;
+    private final ZohoItemCacheService itemCache;
 
     public ZohoAuthService(RestClient.Builder builder,
                            ZohoProperties properties,
-                           TokenStore store) {
+                           TokenStorage store, ZohoOrganizationService orgService,
+                           ZohoItemCacheService itemCache) {
         this.restClient = builder.build();
         this.properties = properties;
         this.tokenStore = store;
+        this.orgService = orgService;
+        this.itemCache = itemCache;
     }
 
     // 1) Build authorization URL for Angular to redirect browser
@@ -55,6 +61,15 @@ public class ZohoAuthService {
                 .body(ZohoTokenResponse.class);
 
         tokenStore.saveToken(token);
+
+        try {
+            orgService.getOrganizationId();   // loads & caches orgId
+            itemCache.loadItems();           // loads items AFTER orgId is known
+            System.out.println("🚀 Initialization complete");
+        }
+        catch (Exception e) {
+            System.err.println("Error initializing Zoho: " + e.getMessage());
+        }
         return token;
     }
 
@@ -80,16 +95,21 @@ public class ZohoAuthService {
                     .body(ZohoTokenResponse.class);
 
             tokenStore.saveToken(token);
+            orgService.getOrganizationId();   // loads & caches orgId
+            itemCache.loadItems();           // loads items AFTER orgId is known
+            System.out.println("🚀 Initialization complete");
             return token;
         } catch (HttpClientErrorException e) {
             System.err.println("❌ Refresh failed: " + e.getResponseBodyAsString());
             throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
     // 4) Get valid token (refresh if needed)
     public ZohoTokenResponse getValidToken() {
-        if (tokenStore.hasValidToken()) {
+        if (!tokenStore.isExpired()) {
             return tokenStore.getToken();
         }
         return refreshToken();

@@ -1,6 +1,7 @@
 package com.zoho.client.scheduler;
 
 import com.zoho.client.model.ZohoTokenResponse;
+import com.zoho.client.service.TokenStorage;
 import com.zoho.client.service.TokenStore;
 import com.zoho.client.service.ZohoAuthService;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -9,10 +10,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class TokenRefreshScheduler {
 
-    private final TokenStore tokenStore;
+    //private final TokenStore tokenStore;
+    private final TokenStorage tokenStore;
     private final ZohoAuthService zohoAuthService;
 
-    public TokenRefreshScheduler(TokenStore tokenStore, ZohoAuthService authService) {
+    public TokenRefreshScheduler(TokenStorage tokenStore, ZohoAuthService authService) {
         this.tokenStore = tokenStore;
         this.zohoAuthService = authService;
     }

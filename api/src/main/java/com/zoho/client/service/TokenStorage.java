@@ -3,41 +3,30 @@ package com.zoho.client.service;
 import com.zoho.client.model.ZohoTokenResponse;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.locks.ReentrantLock;
-
 @Component
 public class TokenStorage {
 
-    private ZohoTokenResponse token;
-    private final ReentrantLock lock = new ReentrantLock();
+    private ZohoTokenResponse token; // stored in memory
+    private long expiryEpoch = 0;
 
     public ZohoTokenResponse getToken() {
-        lock.lock();
-        try {
-            return token;
-        } finally {
-            lock.unlock();
-        }
+        return token;
     }
 
     public void saveToken(ZohoTokenResponse token) {
-        lock.lock();
-        try {
-            if (token != null) {
-                token.setFetchedAt(System.currentTimeMillis());
-            }
-            this.token = token;
-        } finally {
-            lock.unlock();
-        }
+        this.token = token;
+        int time = (token.getExpires_in()-60) * 1000;
+        this.expiryEpoch = System.currentTimeMillis() + time;
+        //this.expiryEpoch = Long.MAX_VALUE;
     }
 
-    public boolean hasValidToken() {
-        lock.lock();
-        try {
-            return token != null && !token.isExpired();
-        } finally {
-            lock.unlock();
-        }
+    public boolean isExpired() {
+        return System.currentTimeMillis() >= expiryEpoch;
+        //return false;
+    }
+
+    public void clear() {
+        token = null;
+        expiryEpoch = 0;
     }
 }

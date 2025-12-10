@@ -1,0 +1,70 @@
+<div class="upload-wrapper">
+
+  <h2>Upload Transactions Sheet</h2>
+
+  <label class="upload-btn">
+    Choose Excel File
+    <input type="file" accept=".xlsx" hidden (change)="onFileSelected($event)">
+  </label>
+
+  <p *ngIf="fileName">Selected: {{ fileName }}</p>
+
+  <!-- PREVIEW TABLE -->
+  <div *ngIf="previewMode">
+
+    <h3>Preview Transactions</h3>
+    <p>Select rows to convert into invoices.</p>
+
+    <table>
+      <tr>
+        <th>Select</th>
+        <th>Row</th>
+        <th>Customer</th>
+        <th>Reference</th>
+        <th>Amount</th>
+        <th>Description</th>
+      </tr>
+
+      <tr *ngFor="let row of pagedData">
+        <td>
+          <input type="checkbox"
+                 [checked]="selectedRows.includes(row)"
+                 (change)="toggleSelection(row)"
+                 [disabled]="row.duplicate">
+        </td>
+
+        <td>{{ row.row }}</td>
+
+        <td [class.duplicate]="row.duplicate">{{ row.customerName }}</td>
+
+        <td>{{ row.referenceNumber }}</td>
+
+        <td>{{ row.amount }}</td>
+
+        <td>{{ row.description }}</td>
+      </tr>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <button (click)="page = page - 1" [disabled]="page === 1">Prev</button>
+      <span>Page {{ page }}</span>
+      <button (click)="page = page + 1" 
+              [disabled]="page * pageSize >= previewData.length">
+        Next
+      </button>
+    </div>
+
+    <button class="process-btn" (click)="createInvoices()" [disabled]="processing">
+      {{ processing ? 'Processing...' : 'Create Invoices' }}
+    </button>
+
+  </div>
+
+  <!-- SUCCESS BOX -->
+  <div *ngIf="success" class="success-box">
+    <h3>Invoices Created Successfully!</h3>
+    <pre>{{ result | json }}</pre>
+  </div>
+
+</div>

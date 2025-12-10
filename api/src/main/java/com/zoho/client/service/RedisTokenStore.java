@@ -5,8 +5,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-@Component
-@Primary
+//@Component
+//@Primary
 public class RedisTokenStore implements TokenStore {
 
     private static final String KEY = "zoho:oauth:token";

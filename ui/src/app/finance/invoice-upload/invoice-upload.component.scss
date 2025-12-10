@@ -1,0 +1,29 @@
+.duplicate {
+  color: red;
+  font-weight: bold;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+
+  th, td {
+    padding: 8px;
+    border: 1px solid #ccc;
+  }
+}
+
+.pagination {
+  margin-top: 10px;
+  display: flex;
+  gap: 15px;
+}
+
+.process-btn {
+  margin-top: 20px;
+  padding: 10px 15px;
+  background: #0078ff;
+  color: white;
+  border-radius: 5px;
+}

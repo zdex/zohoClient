@@ -3,7 +3,7 @@ spring:
     name: client
   data:
     redis:
-      host: localhost
+      host: 127.0.0.1
       port: 6379
 Access-Control-Allow-Credentials: true
 zoho:
@@ -12,4 +12,7 @@ zoho:
     redirect-uri: "http://localhost:4200/zoho/callback"
     auth-url: "https://accounts.zoho.com/oauth/v2/auth"
     token-url: "https://accounts.zoho.com/oauth/v2/token"
-    scope: "ZohoBooks.invoices.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.UPDATE,ZohoBooks.invoices.DELETE"
+    scope: "ZohoBooks.settings.READ,ZohoBooks.contacts.ALL,ZohoBooks.invoices.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.UPDATE,ZohoBooks.invoices.DELETE"
+    openai-api-key: ${OPENAI_API_KEY}
+    currency-id: "USD"
+    payment-mode-default: "Cash"

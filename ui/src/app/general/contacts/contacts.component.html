@@ -1,0 +1,30 @@
+<h2>Contacts</h2>
+
+<div class="actions">
+  <button (click)="fetchContacts()">Fetch Contacts</button>
+
+  <label class="upload-btn">
+    Upload CSV
+    <input type="file" accept=".csv" hidden (change)="uploadCsv($event)">
+  </label>
+</div>
+
+<div class="loading" *ngIf="uploading">Uploading...</div>
+
+<div class="list" *ngIf="contacts.length > 0">
+  <h3>Fetched Contacts</h3>
+
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Company</th>
+    </tr>
+
+    <tr *ngFor="let c of contacts">
+      <td>{{ c.contact_name }}</td>
+      <td>{{ c.email }}</td>
+      <td>{{ c.company_name }}</td>
+    </tr>
+  </table>
+</div>
