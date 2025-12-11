@@ -1,14 +1,10 @@
 package com.zoho.client.service;
 
-import com.zoho.client.config.ZohoProperties;
 import com.zoho.client.model.InvoiceRequestDto;
 import com.zoho.client.model.ParsedTransaction;
-import com.zoho.client.model.ZohoTokenResponse;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.JsonNode;
 

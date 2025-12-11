@@ -12,6 +12,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -55,6 +56,7 @@ public class ZohoInvoiceService {
         invoiceBody.put("customer_id", contactId);
         invoiceBody.put("reference_number", dto.getTransactionReference());
         invoiceBody.put("date", dto.getDate().format(DateTimeFormatter.ISO_DATE));
+        invoiceBody.put("due_date", dto.getDate().plusDays(14).format(DateTimeFormatter.ISO_DATE));
         invoiceBody.put("line_items", mapper.convertValue(lineItemsArray, Object.class));
         invoiceBody.put("payment_terms", 0);
         invoiceBody.put("notes", dto.getDescription());
@@ -89,10 +91,20 @@ public class ZohoInvoiceService {
         paymentBody.put("customer_id", contactId);
         paymentBody.put("invoice_id", invoiceId);
         paymentBody.put("amount", dto.getAmount());
-        paymentBody.put("payment_mode", "Cash");
+        paymentBody.put("payment_mode", "Wells Zelle");
+        paymentBody.put("payment_status", "paid");
+        paymentBody.put("account_name", "[ Wellsfargo ] Wellsfargo busniness account");
+        paymentBody.put("account_type", "bank");
+        paymentBody.put("reference_number", dto.getTransactionReference());
         paymentBody.put("date", dto.getDate().format(DateTimeFormatter.ISO_DATE));
 
-       /* String paymentRespStr = restClient.post()
+        Map<String, Object> invoiceEntry = new HashMap<>();
+        invoiceEntry.put("invoice_id", invoiceId);
+        invoiceEntry.put("amount_applied", dto.getAmount());
+
+        paymentBody.put("invoices", List.of(invoiceEntry));
+
+        String paymentRespStr = restClient.post()
                 .uri(paymentUrl)
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Zoho-oauthtoken " + token.getAccess_token())
@@ -100,12 +112,50 @@ public class ZohoInvoiceService {
                 .retrieve()
                 .body(String.class);
 
-        JsonNode paymentRoot = mapper.readTree(paymentRespStr);*/
+        JsonNode paymentRoot = mapper.readTree(paymentRespStr);
+// Validate Zoho response
+        int paymentCode = paymentRoot.path("code").asInt(-1);
+        String paymentMessage = paymentRoot.path("message").asText();
 
-        // Combine into one response
+        if (paymentCode != 0) {
+            throw new RuntimeException("Zoho payment creation failed: " + paymentMessage +
+                    " | Response: " + paymentRespStr);
+        }
+
+// Extract the payment object returned by Zoho
+        JsonNode paymentNode = paymentRoot.path("payment");
+
+// Build combined result
         Map<String, Object> combined = new HashMap<>();
         combined.put("invoice", invoiceNode);
-      //  combined.put("payment", paymentRoot.path("payment"));
+        combined.put("payment", paymentNode);
+        combined.put("payment_message", paymentMessage);
+        combined.put("payment_code", paymentCode);
+
+        // 6. Create invoice in Zoho
+        String updateInvoiceUrl = props.getBooksBaseUrl()
+                + "/invoices/" + invoiceId +"?organization_id=" + props.getOrganizationId();
+
+        Map<String, Object> updateInvoiceBody = new HashMap<>();
+        updateInvoiceBody.put("status", "paid");
+        updateInvoiceBody.put("status_formatted", "Paid");
+
+        String updateIinvoiceRespStr = restClient.put()
+                .uri(updateInvoiceUrl)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Zoho-oauthtoken " + token.getAccess_token())
+                .body(updateInvoiceBody)
+                .retrieve()
+                .body(String.class);
+
+        JsonNode updateIinvoiceRoot = mapper.readTree(updateIinvoiceRespStr);
+        int updateIinvoiceCode = updateIinvoiceRoot.path("code").asInt(-1);
+        String message = updateIinvoiceRoot.path("message").asText();
+
+        if (updateIinvoiceCode != 0) {
+            throw new RuntimeException("Zoho payment creation failed: " + paymentMessage +
+                    " | Response: " + paymentRespStr);
+        }
 
         return mapper.valueToTree(combined);
     }
