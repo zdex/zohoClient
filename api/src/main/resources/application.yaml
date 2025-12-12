@@ -12,7 +12,9 @@ zoho:
     redirect-uri: "http://localhost:4200/zoho/callback"
     auth-url: "https://accounts.zoho.com/oauth/v2/auth"
     token-url: "https://accounts.zoho.com/oauth/v2/token"
-    scope: "ZohoBooks.settings.READ,ZohoBooks.contacts.ALL,ZohoBooks.invoices.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.UPDATE,ZohoBooks.invoices.DELETE,ZohoBooks.customerpayments.CREATE"
+    scope: "ZohoBooks.settings.READ,ZohoBooks.contacts.ALL,ZohoBooks.invoices.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.UPDATE,ZohoBooks.invoices.DELETE,ZohoBooks.customerpayments.CREATE,ZohoBooks.expenses.CREATE,ZohoBooks.banking.READ"
     openai-api-key: ${OPENAI_API_KEY}
     currency-id: "USD"
     payment-mode-default: "Cash"
+    mileageEmployeeId: ""
+

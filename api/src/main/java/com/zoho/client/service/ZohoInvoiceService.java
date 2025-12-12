@@ -10,6 +10,7 @@ import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +25,7 @@ public class ZohoInvoiceService {
     private final ZohoContactsService contactService;
     private final LineItemAiService aiService;
     private final ObjectMapper mapper = new ObjectMapper();
+    private String cachedExpenseAccountId;
 
     public ZohoInvoiceService(RestClient.Builder builder,
                               ZohoProperties props,
@@ -71,8 +73,17 @@ public class ZohoInvoiceService {
 
         JsonNode invoiceRoot = mapper.readTree(invoiceRespStr);
         JsonNode invoiceNode = invoiceRoot.path("invoice");
+        JsonNode lineItems = invoiceNode.path("line_items");
         String invoiceId = invoiceNode.path("invoice_id").asText();
+        double miles = 0;
+        double mileageRate = 0.65;
 
+        for (JsonNode item : invoiceNode.path("line_items")) {
+            if ("Travel Cost".equalsIgnoreCase(item.path("name").asText())) {
+                miles = item.path("quantity").asDouble();
+                mileageRate = item.path("rate").asDouble(0.65);
+            }
+        }
         // 4. Mark invoice as Sent
         String markSentUrl = props.getBooksBaseUrl()
                 + "/invoices/" + invoiceId + "/status/sent?organization_id=" + props.getOrganizationId();
@@ -132,7 +143,7 @@ public class ZohoInvoiceService {
         combined.put("payment_message", paymentMessage);
         combined.put("payment_code", paymentCode);
 
-        // 6. Create invoice in Zoho
+        // 6. update invoice in Zoho with paid status
         String updateInvoiceUrl = props.getBooksBaseUrl()
                 + "/invoices/" + invoiceId +"?organization_id=" + props.getOrganizationId();
 
@@ -157,6 +168,115 @@ public class ZohoInvoiceService {
                     " | Response: " + paymentRespStr);
         }
 
+        //7. create expense for invoice
+        JsonNode expenseNode = createExpenseForInvoice(
+                invoiceId,
+                dto.getDate(),
+                contactId,
+                dto.getTransactionReference(),
+                miles,
+                mileageRate
+        );
+
+        combined.put("expense", expenseNode);
         return mapper.valueToTree(combined);
     }
+
+    public JsonNode createExpenseForInvoice(String invoiceId,
+                                            LocalDate date,
+                                            String customerId,
+                                            String referenceNumber,
+                                            double miles,
+                                            double mileageRate) throws Exception {
+        miles = 100d;
+        ZohoTokenResponse token = authService.getValidToken();
+        if (miles <= 0) {
+            System.out.println("No Travel Cost line item found → skipping expense creation.");
+            return null;
+        }
+        // Get account_id (cached after first lookup)
+        String accountId = getExpenseAccountId();
+
+        String expenseUrl = props.getBooksBaseUrl()
+                + "/expenses?organization_id=" + props.getOrganizationId();
+
+        Map<String, Object> expenseBody = new HashMap<>();
+        expenseBody.put("expense_type", "manual");
+        expenseBody.put("date", date.format(DateTimeFormatter.ISO_DATE));
+        expenseBody.put("employee_id", props.getMileageEmployeeId());
+        expenseBody.put("category_id", "4991661000000084140");
+        expenseBody.put("account_id", accountId);
+        expenseBody.put("distance", miles);
+        expenseBody.put("mileage_rate", mileageRate);
+        expenseBody.put("vehicle_id", "4991661000000105003");
+        expenseBody.put("customer_id", customerId);
+        expenseBody.put("reference_number", referenceNumber);
+        expenseBody.put("notes", "Mileage expense auto-created for invoice " + invoiceId);
+        System.out.println(mapper.writeValueAsString(expenseBody));
+        String respStr = restClient.post()
+                .uri(expenseUrl)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Zoho-oauthtoken " + token.getAccess_token())
+                .body(expenseBody)
+                .retrieve()
+                .body(String.class);
+
+        JsonNode root = mapper.readTree(respStr);
+
+        if (root.path("code").asInt() != 0) {
+            throw new RuntimeException("Zoho Expense creation failed: " + root);
+        }
+
+        return root.path("expense");
+    }
+    public JsonNode getBankAccounts() throws Exception {
+        ZohoTokenResponse token = authService.getValidToken();
+        String url = props.getBooksBaseUrl()
+                + "/bankaccounts?organization_id=" + props.getOrganizationId();
+
+        String resp = restClient.get()
+                .uri(url)
+                .header("Authorization", "Zoho-oauthtoken " + token.getAccess_token())
+                .retrieve()
+                .body(String.class);
+
+        JsonNode root = mapper.readTree(resp);
+
+        if (root.path("code").asInt() != 0) {
+            throw new RuntimeException("Unable to fetch bank accounts: " + resp);
+        }
+
+        return root.path("bankaccounts");
+    }
+
+
+    private String getExpenseAccountId() throws Exception {
+
+        // Return cached ID if already loaded
+        if (cachedExpenseAccountId != null) {
+            return cachedExpenseAccountId;
+        }
+
+        JsonNode accounts = getBankAccounts();
+
+        // Step 1: Try to find Corporate Account
+        for (JsonNode acc : accounts) {
+            if (acc.path("account_name").asText().contains("Wellsfargo busniness account")) {
+                cachedExpenseAccountId = acc.path("account_id").asText();
+                return cachedExpenseAccountId;
+            }
+        }
+
+        // Step 2: Fallback — pick first active bank account
+        for (JsonNode acc : accounts) {
+            if (acc.path("is_active").asBoolean(true)) {
+                cachedExpenseAccountId = acc.path("account_id").asText();
+                return cachedExpenseAccountId;
+            }
+        }
+
+        throw new RuntimeException("No valid bank account found for expenses!");
+    }
+
+
 }

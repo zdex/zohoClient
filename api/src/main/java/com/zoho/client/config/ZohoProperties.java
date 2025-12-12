@@ -24,6 +24,9 @@ public class ZohoProperties {
 
     private String currencyId = "USD";
     private String paymentModeDefault = "Cash";
+    private String mileageEmployeeId;
+    private String expenseBankAccountId; // e.g. 460000000050127
+
 
     public String getOrganizationId() { return organizationId; }
     public void setOrganizationId(String organizationId) { this.organizationId = organizationId; }
@@ -85,5 +88,21 @@ public class ZohoProperties {
 
     public void setPaymentModeDefault(String paymentModeDefault) {
         this.paymentModeDefault = paymentModeDefault;
+    }
+
+    public String getMileageEmployeeId() {
+        return mileageEmployeeId;
+    }
+
+    public void setMileageEmployeeId(String mileageEmployeeId) {
+        this.mileageEmployeeId = mileageEmployeeId;
+    }
+
+    public String getExpenseBankAccountId() {
+        return expenseBankAccountId;
+    }
+
+    public void setExpenseBankAccountId(String expenseBankAccountId) {
+        this.expenseBankAccountId = expenseBankAccountId;
     }
 }
