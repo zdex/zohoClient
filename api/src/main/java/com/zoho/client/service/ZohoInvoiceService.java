@@ -3,6 +3,7 @@ package com.zoho.client.service;
 
 import com.zoho.client.config.ZohoProperties;
 import com.zoho.client.model.InvoiceRequestDto;
+import com.zoho.client.model.ParsedTransaction;
 import com.zoho.client.model.ZohoTokenResponse;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,8 @@ import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -38,9 +41,14 @@ public class ZohoInvoiceService {
         this.contactService = contactService;
         this.aiService = aiService;
     }
-
-    public JsonNode createInvoiceWithPayment(InvoiceRequestDto dto) throws Exception {
-
+    public boolean invoiceExistsByReference(String reference) throws Exception {
+        JsonNode root = getInvoicesByReferenceNumber(reference, 1, 1);
+        return root.path("invoices").size() > 0;
+    }
+    public JsonNode createInvoiceWithPayment(ParsedTransaction dto) throws Exception {
+        if(this.invoiceExistsByReference(dto.getTransactionReference())) {
+            return null;
+        }
         ZohoTokenResponse token = authService.getValidToken();
 
         // 1. Get or create contact
@@ -79,9 +87,9 @@ public class ZohoInvoiceService {
         double mileageRate = 0.65;
 
         for (JsonNode item : invoiceNode.path("line_items")) {
-            if ("Travel Cost".equalsIgnoreCase(item.path("name").asText())) {
+            if (item.path("name").asText().toLowerCase().contains("travel")) {
                 miles = item.path("quantity").asDouble();
-                mileageRate = item.path("rate").asDouble(0.65);
+              //  mileageRate = item.path("rate").asDouble(0.65);
             }
         }
         // 4. Mark invoice as Sent
@@ -104,6 +112,7 @@ public class ZohoInvoiceService {
         paymentBody.put("amount", dto.getAmount());
         paymentBody.put("payment_mode", "Wells Zelle");
         paymentBody.put("payment_status", "paid");
+        paymentBody.put("payment_status_formatted", "Paid");
         paymentBody.put("account_name", "[ Wellsfargo ] Wellsfargo busniness account");
         paymentBody.put("account_type", "bank");
         paymentBody.put("reference_number", dto.getTransactionReference());
@@ -188,7 +197,7 @@ public class ZohoInvoiceService {
                                             String referenceNumber,
                                             double miles,
                                             double mileageRate) throws Exception {
-        miles = 100d;
+      //  miles = 100d;
         ZohoTokenResponse token = authService.getValidToken();
         if (miles <= 0) {
             System.out.println("No Travel Cost line item found → skipping expense creation.");
@@ -208,7 +217,7 @@ public class ZohoInvoiceService {
         expenseBody.put("account_id", accountId);
         expenseBody.put("distance", miles);
         expenseBody.put("mileage_rate", mileageRate);
-        expenseBody.put("vehicle_id", "4991661000000105003");
+        expenseBody.put("vehicle_id", "4991661000000105001");
         expenseBody.put("customer_id", customerId);
         expenseBody.put("reference_number", referenceNumber);
         expenseBody.put("notes", "Mileage expense auto-created for invoice " + invoiceId);
@@ -276,6 +285,34 @@ public class ZohoInvoiceService {
         }
 
         throw new RuntimeException("No valid bank account found for expenses!");
+    }
+
+    public JsonNode getInvoicesByReferenceNumber(
+            String referenceNumber,
+            int page,
+            int perPage
+    ) throws Exception {
+        ZohoTokenResponse token = authService.getValidToken();
+        String url = props.getBooksBaseUrl()
+                + "/invoices"
+                + "?organization_id=" + props.getOrganizationId()
+                + "&reference_number=" + URLEncoder.encode(referenceNumber, StandardCharsets.UTF_8)
+                + "&page=" + page
+                + "&per_page=" + perPage;
+
+        String response = restClient.get()
+                .uri(url)   // ✅ FULL URL, no uriBuilder
+                .header("Authorization", "Zoho-oauthtoken " + token.getAccess_token())
+                .retrieve()
+                .body(String.class);
+
+        JsonNode root = mapper.readTree(response);
+
+        if (root.path("code").asInt() != 0) {
+            throw new RuntimeException("Zoho invoice search failed: " + response);
+        }
+
+        return root;
     }
 
 

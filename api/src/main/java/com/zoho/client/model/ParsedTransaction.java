@@ -8,7 +8,7 @@ public class ParsedTransaction {
     public double amount;
     public String description;
     public String customerName;
-    public String referenceNumber;
+    public String transactionReference;
     public boolean duplicate;
 
     // getters/setters omitted for brevity
@@ -54,12 +54,12 @@ public class ParsedTransaction {
         this.customerName = customerName;
     }
 
-    public String getReferenceNumber() {
-        return referenceNumber;
+    public String getTransactionReference() {
+        return transactionReference;
     }
 
-    public void setReferenceNumber(String referenceNumber) {
-        this.referenceNumber = referenceNumber;
+    public void setTransactionReference(String transactionReference) {
+        this.transactionReference = transactionReference;
     }
 
     public boolean isDuplicate() {

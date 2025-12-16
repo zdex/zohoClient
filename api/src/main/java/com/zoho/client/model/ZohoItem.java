@@ -5,6 +5,7 @@ public class ZohoItem {
     private String name;
     private String description;
     private Double rate;
+    private boolean active;
 
     public String getItem_id() { return item_id; }
     public void setItem_id(String item_id) { this.item_id = item_id; }
@@ -17,4 +18,12 @@ public class ZohoItem {
 
     public Double getRate() { return rate; }
     public void setRate(Double rate) { this.rate = rate; }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 }

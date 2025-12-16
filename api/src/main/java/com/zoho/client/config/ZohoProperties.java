@@ -27,6 +27,8 @@ public class ZohoProperties {
     private String mileageEmployeeId;
     private String expenseBankAccountId; // e.g. 460000000050127
 
+    private String tipItemName = "Tip";          // or "Gratuity"
+    private String travelItemName = "Travel";
 
     public String getOrganizationId() { return organizationId; }
     public void setOrganizationId(String organizationId) { this.organizationId = organizationId; }
@@ -104,5 +106,21 @@ public class ZohoProperties {
 
     public void setExpenseBankAccountId(String expenseBankAccountId) {
         this.expenseBankAccountId = expenseBankAccountId;
+    }
+
+    public String getTravelItemName() {
+        return travelItemName;
+    }
+
+    public void setTravelItemName(String travelItemName) {
+        this.travelItemName = travelItemName;
+    }
+
+    public String getTipItemName() {
+        return tipItemName;
+    }
+
+    public void setTipItemName(String tipItemName) {
+        this.tipItemName = tipItemName;
     }
 }

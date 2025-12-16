@@ -1,5 +1,6 @@
 package com.zoho.client.service;
 
+import com.zoho.client.cache.PreviewCache;
 import com.zoho.client.model.InvoiceRequestDto;
 import com.zoho.client.model.ParsedTransaction;
 import org.apache.poi.ss.usermodel.*;
@@ -18,11 +19,28 @@ import java.util.regex.Pattern;
 public class InvoiceBatchService {
 
     private final ZohoInvoiceService invoiceService;
+    private PreviewCache previewCache;
 
-    public InvoiceBatchService(ZohoInvoiceService invoiceService) {
+
+    public InvoiceBatchService(ZohoInvoiceService invoiceService, PreviewCache previewCache) {
         this.invoiceService = invoiceService;
+        this.previewCache = previewCache;
     }
 
+    public void processSelectedRows(List<Integer> rows) throws Exception {
+
+        List<ParsedTransaction> previewData = previewCache.get(); // already parsed
+
+        for (ParsedTransaction tx : previewData) {
+            if (rows.contains(tx.getRow())) {
+                //createInvoiceWithPayment(tx);
+                invoiceService.createInvoiceWithPayment(tx);
+            }
+        }
+    }
+
+
+/*
     public Map<String, Object> processSelectedRows(List<ParsedTransaction> rows) throws Exception {
 
         List<Map<String, Object>> results = new ArrayList<>();
@@ -36,9 +54,13 @@ public class InvoiceBatchService {
             dto.setDate(tx.date);
             dto.setDescription(tx.description);
             dto.setTransactionReference(tx.referenceNumber);
-
+            if(tx.referenceNumber.equalsIgnoreCase("N/A")) {
+                continue;
+            }
             JsonNode res = invoiceService.createInvoiceWithPayment(dto);
-
+            if(tx.customerName.toUpperCase().equalsIgnoreCase("UNKNOWN CUSTOMER") || res == null) {
+                continue;
+            }
             Map<String, Object> record = new HashMap<>();
             record.put("row", tx.row);
             record.put("invoice_id", res.path("invoice").path("invoice_id").asText());
@@ -53,7 +75,7 @@ public class InvoiceBatchService {
         summary.put("invoices", results);
 
         return summary;
-    }
+    }*/
 
 
     public Map<String, Object> processSheet(MultipartFile file) throws Exception {
@@ -77,15 +99,18 @@ public class InvoiceBatchService {
             String customer = extractCustomerName(description);
             String refNumber = extractReferenceNumber(description);
 
-            InvoiceRequestDto dto = new InvoiceRequestDto();
-            dto.setCustomerName(customer);
+           // InvoiceRequestDto dto = new InvoiceRequestDto();
+            ParsedTransaction dto = new  ParsedTransaction();
+                    dto.setCustomerName(customer);
             dto.setAmount(amount);
             dto.setDate(date);
             dto.setDescription(description);
             dto.setTransactionReference(refNumber);  // ← NEW!
 
             JsonNode response = invoiceService.createInvoiceWithPayment(dto);
-
+            if(response == null) {
+                continue;
+            }
             Map<String, Object> record = new HashMap<>();
             record.put("row", i);
             record.put("customer", customer);
@@ -104,14 +129,35 @@ public class InvoiceBatchService {
         return summary;
     }
 
-    private String extractCustomerName(String description) {
+    /*private String extractCustomerName(String description) {
         Pattern p = Pattern.compile("FROM (.*?) ON", Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(description);
         if (m.find()) {
             return m.group(1).trim();
         }
         return "Unknown Customer";
+    }*/
+
+    private String extractCustomerName(String description) {
+
+        if (description == null || description.isBlank()) {
+            return "Unknown Customer";
+        }
+
+        Pattern p = Pattern.compile(
+                "FROM\\s+(.*?)(?:\\s+ON\\s+|\\s+REF\\s+#)",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher m = p.matcher(description);
+
+        if (m.find()) {
+            return m.group(1).trim();
+        }
+
+        return "Unknown Customer";
     }
+
 
     private String extractReferenceNumber(String description) {
         Pattern p = Pattern.compile("REF #\\s*([A-Za-z0-9]+)", Pattern.CASE_INSENSITIVE);
@@ -159,22 +205,22 @@ public class InvoiceBatchService {
             tx.amount = amountCell.getNumericCellValue();
             tx.description = descStr.trim();
             tx.customerName = extractCustomerName(tx.description);
-            tx.referenceNumber = extractReferenceNumber(tx.description);
+            tx.transactionReference = extractReferenceNumber(tx.description);
 
             // Duplicate detection
             boolean dup = false;
 
-            if (seenRefs.contains(tx.referenceNumber)) dup = true;
+            if (seenRefs.contains(tx.transactionReference)) dup = true;
             if (seenDescriptions.contains(tx.description)) dup = true;
 
             tx.duplicate = dup;
 
-            seenRefs.add(tx.referenceNumber);
+            seenRefs.add(tx.transactionReference);
             seenDescriptions.add(tx.description);
 
             list.add(tx);
         }
-
+        previewCache.store(list);
         return list;
     }
 

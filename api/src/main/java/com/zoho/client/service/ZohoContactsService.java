@@ -91,27 +91,60 @@ public class ZohoContactsService {
     }
 
     public void uploadContactsCsv(MultipartFile file) {
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
+
+        try (BufferedReader reader =
+                     new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+
             String line;
+            boolean isHeader = true;
 
             ZohoTokenResponse token = tokenStore.getToken();
 
             while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",");
+
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue; // skip empty lines
+                }
+
+                // Skip header row
+                if (isHeader) {
+                    isHeader = false;
+                    continue;
+                }
+
+                String[] parts = line.split(",", -1); // keep empty columns
+
+                if (parts.length < 1 || parts[0].isBlank()) {
+                    System.out.println("Skipping row (missing contact_name): " + line);
+                    continue;
+                }
 
                 Map<String, Object> body = new HashMap<>();
-                body.put("contact_name", parts[0]);
-                body.put("email", parts[1]);
-                body.put("company_name", parts[2]);
+                body.put("contact_name", parts[0].trim());
 
-                createContact(token.getAccess_token(), body);
+                if (parts.length > 1 && !parts[1].isBlank()) {
+                    body.put("email", parts[1].trim());
+                }
+
+                if (parts.length > 2 && !parts[2].isBlank()) {
+                    body.put("company_name", parts[2].trim());
+                }
+
+                try {
+                    createContact(token.getAccess_token(), body);
+                } catch (Exception ex) {
+                    // Log & continue — don't kill the batch
+                    System.err.println("Failed to create contact for row: " + line);
+                    ex.printStackTrace();
+                }
             }
 
         } catch (Exception e) {
             throw new RuntimeException("CSV upload failed", e);
         }
     }
+
 
     private void createContact(String token, Map<String, Object> contact) {
         String url = props.getBooksBaseUrl()

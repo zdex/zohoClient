@@ -58,10 +58,14 @@ public class ZohoItemCacheService {
         if (itemsNode.isArray()) {
             for (JsonNode node : itemsNode) {
                 ZohoItem item = new ZohoItem();
+                if(node.path("status").asText().equalsIgnoreCase("inactive")) {
+                    continue;
+                }
                 item.setItem_id(node.path("item_id").asText());
                 item.setName(node.path("name").asText());
                 item.setDescription(node.path("description").asText(""));
                 item.setRate(node.path("rate").asDouble(0));
+                item.setActive(true);
                 cachedItems.add(item);
             }
         }
@@ -75,4 +79,6 @@ public class ZohoItemCacheService {
     public List<ZohoItem> getItems() {
         return cachedItems;
     }
+
+
 }
